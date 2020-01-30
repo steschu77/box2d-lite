@@ -12,7 +12,7 @@
 #ifndef ARBITER_H
 #define ARBITER_H
 
-#include "MathUtils.h"
+#include "VecMath.h"
 
 struct Body;
 
@@ -30,69 +30,55 @@ union FeaturePair
 
 struct Contact
 {
-	Contact() : Pn(0.0f), Pt(0.0f), Pnb(0.0f) {}
-
-	Vec2 position;
-	Vec2 normal;
-	Vec2 r1, r2;
-	float separation;
-	float Pn;	// accumulated normal impulse
-	float Pt;	// accumulated tangent impulse
-	float Pnb;	// accumulated normal impulse for position bias
-	float massNormal, massTangent;
-	float bias;
+	x3d::vector2 position;
+	x3d::vector2 normal;
+	float separation = 0;
+    float Pn = 0; // accumulated normal impulse
+    float Pt = 0; // accumulated tangent impulse
+    float Pnb = 0; // accumulated normal impulse for position bias
+    float massNormal = 0;
+    float massTangent = 0;
+	float bias = 0;
 	FeaturePair feature;
 };
 
 struct ArbiterKey
 {
-	ArbiterKey(Body* b1, Body* b2)
-	{
-		if (b1 < b2)
-		{
-			body1 = b1; body2 = b2;
-		}
-		else
-		{
-			body1 = b2; body2 = b1;
-		}
-	}
+  ArbiterKey(Body* b1, Body* b2);
 
-	Body* body1;
-	Body* body2;
+  Body* body1;
+  Body* body2;
 };
 
 struct Arbiter
 {
 	enum {MAX_POINTS = 2};
 
-	Arbiter(Body* b1, Body* b2);
+	Arbiter(ArbiterKey& key);
 
 	void Update(Contact* contacts, int numContacts);
 
 	void PreStep(float inv_dt);
 	void ApplyImpulse();
 
-	Contact contacts[MAX_POINTS];
-	int numContacts;
+	ArbiterKey key;
 
-	Body* body1;
-	Body* body2;
+	Contact contacts[MAX_POINTS];
+	int numContacts = 0;
 
 	// Combined friction
-	float friction;
+	float friction = 0;
 };
 
-// This is used by std::set
-inline bool operator < (const ArbiterKey& a1, const ArbiterKey& a2)
+inline bool operator<(const ArbiterKey& x0, const ArbiterKey& x1)
 {
-	if (a1.body1 < a2.body1)
-		return true;
-
-	if (a1.body1 == a2.body1 && a1.body2 < a2.body2)
-		return true;
-
-	return false;
+  if (x0.body1 < x1.body1) {
+    return true;
+  }
+  if (x0.body1 == x1.body1 && x0.body2 < x1.body2) {
+    return true;
+  }
+  return false;
 }
 
 int Collide(Contact* contacts, Body* body1, Body* body2);
