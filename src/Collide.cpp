@@ -149,6 +149,21 @@ static void ComputeIncidentEdge(ClipVertex c[2], const x3d::vector2& h,
   c[1].v = pos + Rot * c[1].v;
 }
 
+// ----------------------------------------------------------------------------
+template <typename T, size_t size>
+size_t idxOfMin(const T (&x)[size])
+{
+  size_t idx = 0;
+
+  for (size_t i = 1; i < size; i++) {
+    if (x[i] < x[idx]) {
+      idx = i;
+    }
+  }
+
+  return idx;
+}
+
 // The normal points from A to B
 int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
 {
@@ -165,11 +180,6 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   x3d::matrix2x2 RotAT = RotA.transpose();
   x3d::matrix2x2 RotBT = RotB.transpose();
 
-  x3d::vector2 a1 = RotA.col(0);
-  x3d::vector2 a2 = RotA.col(1);
-  x3d::vector2 b1 = RotB.col(0);
-  x3d::vector2 b2 = RotB.col(1);
-
   x3d::vector2 dp = posB - posA;
   x3d::vector2 dA = RotAT * dp;
   x3d::vector2 dB = RotBT * dp;
@@ -179,44 +189,24 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   x3d::matrix2x2 absCT = absC.transpose();
 
   // Box A faces
-  x3d::vector2 faceA = dA.abs() - 1.01f * hA - absC * hB;
-  x3d::vector2 faceB = dB.abs() - absCT * hA - 1.01f * hB;
+  x3d::vector2 faceA = dA.abs() - hA - absC * hB;
+  x3d::vector2 faceB = dB.abs() - absCT * hA - hB;
   if (faceA.u0() > 0.0f || faceA.u1() > 0.0f || faceB.u0() > 0.0f
     || faceB.u1() > 0.0f) {
     return 0;
   }
 
   // Find best axis
-  Axis axis;
-  float separation;
+  float separation[4];
+  separation[0] = -faceA.u0();
+  separation[1] = -faceA.u1();
+  separation[2] = -faceB.u0();
+  separation[3] = -faceB.u1();
+
+  size_t idx = idxOfMin(separation);
+
+  Axis axis = (Axis)idx;
   x3d::vector2 normal;
-
-  // Box A faces
-  axis = FACE_A_X;
-  separation = faceA.u0();
-  normal = dA.u0() > 0.0f ? RotA.col(0) : -RotA.col(0);
-
-  const float relativeTol = 0.95f;
-  const float absoluteTol = 0.01f;
-
-  if (faceA.u1() > relativeTol * separation) {
-    axis = FACE_A_Y;
-    separation = faceA.u1();
-    normal = dA.u1() > 0.0f ? RotA.col(1) : -RotA.col(1);
-  }
-
-  // Box B faces
-  if (faceB.u0() > relativeTol * separation) {
-    axis = FACE_B_X;
-    separation = faceB.u0();
-    normal = dB.u0() > 0.0f ? RotB.col(0) : -RotB.col(0);
-  }
-
-  if (faceB.u1() > relativeTol * separation) {
-    axis = FACE_B_Y;
-    separation = faceB.u1();
-    normal = dB.u1() > 0.0f ? RotB.col(1) : -RotB.col(1);
-  }
 
   // Setup clipping plane data based on the separating axis
   x3d::vector2 frontNormal, sideNormal;
@@ -227,6 +217,7 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   // Compute the clipping lines and the line segment to be clipped.
   switch (axis) {
   case FACE_A_X: {
+    normal = dA.u0() > 0.0f ? RotA.col(0) : -RotA.col(0);
     frontNormal = normal;
     front = posA * frontNormal + hA.u0();
     sideNormal = RotA.col(1);
@@ -239,6 +230,7 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   } break;
 
   case FACE_A_Y: {
+    normal = dA.u1() > 0.0f ? RotA.col(1) : -RotA.col(1);
     frontNormal = normal;
     front = posA * frontNormal + hA.u1();
     sideNormal = RotA.col(0);
@@ -251,6 +243,7 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   } break;
 
   case FACE_B_X: {
+    normal = dB.u0() > 0.0f ? RotB.col(0) : -RotB.col(0);
     frontNormal = -normal;
     front = posB * frontNormal + hB.u0();
     sideNormal = RotB.col(1);
@@ -263,6 +256,7 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   } break;
 
   case FACE_B_Y: {
+    normal = dB.u1() > 0.0f ? RotB.col(1) : -RotB.col(1);
     frontNormal = -normal;
     front = posB * frontNormal + hB.u1();
     sideNormal = RotB.col(0);
