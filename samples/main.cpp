@@ -526,7 +526,9 @@ int main(int, char**)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    world.Step(timeStep);
+    for (int i = 0; i < 4; i++) {
+      world.Step(timeStep);
+    }
 
     for (int i = 0; i < numBodies; ++i)
       DrawBody(bodies + i);
