@@ -33,11 +33,11 @@ struct Contact
 	x3d::vector2 position;
 	x3d::vector2 normal;
 	float separation = 0;
-    float Pn = 0; // accumulated normal impulse
-    float Pt = 0; // accumulated tangent impulse
-    float Pnb = 0; // accumulated normal impulse for position bias
-    float massNormal = 0;
-    float massTangent = 0;
+	float Pn = 0; // accumulated normal impulse
+	float Pt = 0; // accumulated tangent impulse
+	float Pnb = 0; // accumulated normal impulse for position bias
+	float massNormal = 0;
+	float massTangent = 0;
 	float bias = 0;
 	FeaturePair feature;
 };

@@ -94,12 +94,6 @@ void Arbiter::PreStep(float inv_dt)
     // Apply normal + friction impulse
     x3d::vector2 P = c->Pn * c->normal + c->Pt * tangent;
 
-    x3d::vector2 velocity1 = b1->velocity - b1->invMass * P;
-    float angularVelocity1 = b1->angularVelocity - b1->invI * x3d::cross(r1, P);
-
-    x3d::vector2 velocity2 = b2->velocity + b2->invMass * P;
-    float angularVelocity2 = b2->angularVelocity + b2->invI * x3d::cross(r2, P);
-
     b1->applyImpulse(c->position, -P);
     b2->applyImpulse(c->position, P);
   }
