@@ -81,7 +81,7 @@ void Arbiter::PreStep(float inv_dt)
     kNormal += b1->invI * (r1 * r1 - rn1 * rn1) + b2->invI * (r2 * r2 - rn2 * rn2);
     c->massNormal = 1.0f / kNormal;
 
-    x3d::vector2 tangent = x3d::cross(c->normal, 1.0f);
+    x3d::vector2 tangent = -c->normal.perpendicular();
     float rt1 = r1 * tangent;
     float rt2 = r2 * tangent;
     float kTangent = b1->invMass + b2->invMass;
@@ -133,7 +133,7 @@ void Arbiter::ApplyImpulse()
     dv = b2->velocity + x3d::cross(b2->angularVelocity, r2) - b1->velocity
       - x3d::cross(b1->angularVelocity, r1);
 
-    x3d::vector2 tangent = x3d::cross(c->normal, 1.0f);
+    x3d::vector2 tangent = -c->normal.perpendicular();
     float vt = dv * tangent;
     float dPt = c->massTangent * (-vt);
 
