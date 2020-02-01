@@ -37,24 +37,23 @@ Arbiter::Arbiter(ArbiterKey& key)
   friction = sqrtf(key.body1->friction * key.body2->friction);
 }
 
-void Arbiter::Update(Contact* newContacts, int numNewContacts)
+// ----------------------------------------------------------------------------
+void Arbiter::updateContacts(Contact* newContacts, int numNewContacts)
 {
-  Contact mergedContacts[2];
-
+  // Store accumulated impulses
   for (int i = 0; i < numNewContacts; ++i) {
-    mergedContacts[i] = newContacts[i];
     for (int j = 0; j < numContacts; ++j) {
       if (newContacts[i].feature.value == contacts[j].feature.value) {
-        mergedContacts[i].Pn = contacts[j].Pn;
-        mergedContacts[i].Pt = contacts[j].Pt;
-        mergedContacts[i].Pnb = contacts[j].Pnb;
+        newContacts[i].Pn = contacts[j].Pn;
+        newContacts[i].Pt = contacts[j].Pt;
+        newContacts[i].Pnb = contacts[j].Pnb;
         break;
       }
     }
   }
 
   for (int i = 0; i < numNewContacts; ++i) {
-    contacts[i] = mergedContacts[i];
+    contacts[i] = newContacts[i];
   }
 
   numContacts = numNewContacts;
