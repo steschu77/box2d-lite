@@ -48,7 +48,7 @@ void World::_collide(Body* bi, Body* bj)
 
   if (numContacts > 0) {
     std::pair<ArbIter, bool> ib = arbiters.insert(ArbPair(key, Arbiter(key)));
-    ib.first->second.Update(contacts, numContacts);
+    ib.first->second.updateContacts(contacts, numContacts);
   } else {
     arbiters.erase(key);
   }

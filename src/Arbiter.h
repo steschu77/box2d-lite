@@ -56,7 +56,7 @@ struct Arbiter
 
 	Arbiter(ArbiterKey& key);
 
-	void Update(Contact* contacts, int numContacts);
+	void updateContacts(Contact* contacts, int numContacts);
 
 	void PreStep(float inv_dt);
 	void ApplyImpulse();
