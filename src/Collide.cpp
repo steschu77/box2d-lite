@@ -62,6 +62,99 @@ void Flip(FeaturePair& fp)
   Swap(fp.e.outEdge1, fp.e.outEdge2);
 }
 
+struct ReferenceEdge
+{
+  ReferenceEdge(const Body* poly1, const Body* poly2, int flip);
+
+  const Body* poly1;
+  const Body* poly2;
+  int flip;
+  float separation;
+  int index;
+};
+
+ReferenceEdge::ReferenceEdge(const Body* poly1, const Body* poly2, int flip)
+: poly1(poly1)
+, poly2(poly2)
+, flip(flip)
+, separation(-FLT_MAX)
+, index(0)
+{
+}
+
+// Find the max separation between poly1 and poly2 using edge normals from poly1.
+static void b2FindMaxSeparation(ReferenceEdge* edge)
+{
+  const Body* poly1 = edge->poly1;
+  const Body* poly2 = edge->poly2;
+  const int count1 = poly1->count;
+  const int count2 = poly2->count;
+  const x3d::vector2* n1s = poly1->normals;
+  const x3d::vector2* v1s = poly1->vertices;
+  const x3d::vector2* v2s = poly2->vertices;
+
+  const x3d::rot2 q = x3d::mulT(poly2->q, poly1->q);
+  const x3d::vector2 p = x3d::mulT(poly2->q, poly1->p - poly2->p);
+
+  for (int i = 0; i < count1; ++i) {
+
+    // Get poly1 normal and vertex in poly2 coords.
+    const x3d::vector2 n = x3d::mul(q, n1s[i]);
+    const x3d::vector2 v1 = x3d::mul(q, v1s[i]) + p;
+
+    // Find deepest point for normal i.
+    float si = FLT_MAX;
+    for (int j = 0; j < count2; ++j) {
+      float sij = n * (v2s[j] - v1);
+      if (sij < si) {
+        si = sij;
+      }
+    }
+
+    if (si > edge->separation) {
+      edge->separation = si;
+      edge->index = i;
+    }
+  }
+}
+
+static void b2FindIncidentEdge(ClipVertex c[2], ReferenceEdge* edge)
+{
+  const Body* poly1 = edge->poly1;
+  const Body* poly2 = edge->poly2;
+
+  const int count2 = poly2->count;
+  const x3d::vector2* n2s = poly2->normals;
+  const x3d::vector2* v2s = poly2->vertices;
+
+  // Get the normal of the reference edge in poly2's frame.
+  const x3d::vector2& n = poly1->normals[edge->index];
+  const x3d::vector2 n1 = x3d::mulT(poly2->q, x3d::mul(poly1->q, n));
+
+  // Find the incident edge on poly2.
+  int index = 0;
+  float minDot = FLT_MAX;
+  for (int i = 0; i < count2; ++i) {
+    float dot = n1 * n2s[i];
+    if (dot < minDot) {
+      minDot = dot;
+      index = i;
+    }
+  }
+
+  // Build the clip vertices for the incident edge.
+  const int i1 = index;
+  const int i2 = i1 + 1 < count2 ? i1 + 1 : 0;
+
+  c[0].v = x3d::mul(poly2->q, v2s[i1]) + poly2->p;
+  c[0].fp.e.inEdge2 = edge->index;
+  c[0].fp.e.outEdge2 = i1;
+
+  c[1].v = x3d::mul(poly2->q, v2s[i2]) + poly2->p;
+  c[1].fp.e.inEdge2 = edge->index;
+  c[1].fp.e.outEdge2 = i2;
+}
+
 int ClipSegmentToLine(ClipVertex vOut[2], ClipVertex vIn[2],
   const x3d::vector2& normal, float offset, char clipEdge)
 {
@@ -167,6 +260,44 @@ size_t idxOfMin(const T (&x)[size])
 // The normal points from A to B
 int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
 {
+  ReferenceEdge edgeA(bodyA, bodyB, 0);
+  b2FindMaxSeparation(&edgeA);
+  if (edgeA.separation > 0.0f) {
+    return 0;
+  }
+
+  ReferenceEdge edgeB(bodyB, bodyA, 1);
+  b2FindMaxSeparation(&edgeB);
+  if (edgeB.separation > 0.0f) {
+    return 0;
+  }
+
+  ReferenceEdge* edge = edgeB.separation > edgeA.separation ? &edgeB : &edgeA;
+
+  ClipVertex incedge[2];
+  b2FindIncidentEdge(incedge, edge);
+
+	const int count1 = edge->poly1->count;
+  const x3d::vector2* v1s = edge->poly1->vertices;
+
+  const int iv1 = edge->index;
+  const int iv2 = iv1 + 1 < count1 ? iv1 + 1 : 0;
+
+  const x3d::vector2 v11 = x3d::mul(edge->poly1->q, v1s[iv1]) + edge->poly1->p;
+  const x3d::vector2 v12 = x3d::mul(edge->poly1->q, v1s[iv2]) + edge->poly1->p;
+
+	const x3d::vector2 tangent = (v12 - v11).norm();
+  const x3d::vector2 xnormal = tangent.perpendicular();
+  const float frontOffset = xnormal * v11;
+  const float sideOffset1 = -tangent * v11 + 0.02f;
+  const float sideOffset2 = tangent * v12 + 0.02f;
+
+	ClipVertex incedge1[2];
+  int np1 = ClipSegmentToLine(incedge1, incedge, -tangent, sideOffset1, iv1);
+
+	ClipVertex incedge2[2];
+  int np2 = ClipSegmentToLine(incedge2, incedge1, tangent, sideOffset2, iv2);
+
   // Setup
   x3d::vector2 hA = 0.5f * bodyA->width;
   x3d::vector2 hB = 0.5f * bodyB->width;
@@ -289,17 +420,19 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
 
   // Now clipPoints2 contains the clipping points.
   // Due to roundoff, it is possible that clipping removes all points.
+  //ClipVertex* cv = clipPoints2;
+  ClipVertex* cv = incedge2;
 
   int numContacts = 0;
   for (int i = 0; i < 2; ++i) {
-    float separation = frontNormal * clipPoints2[i].v - front;
+    float separation = frontNormal * cv[i].v - front;
 
     if (separation <= 0) {
       contacts[numContacts].separation = separation;
       contacts[numContacts].normal = normal;
       // slide contact point onto reference face (easy to cull)
-      contacts[numContacts].position = clipPoints2[i].v - separation * frontNormal;
-      contacts[numContacts].feature = clipPoints2[i].fp;
+      contacts[numContacts].position = cv[i].v - separation * frontNormal;
+      contacts[numContacts].feature = cv[i].fp;
       if (axis == FACE_B_X || axis == FACE_B_Y)
         Flip(contacts[numContacts].feature);
       ++numContacts;
