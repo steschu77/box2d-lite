@@ -19,20 +19,6 @@ struct ClipVertex
   FeaturePair fp;
 };
 
-template <typename T>
-inline void Swap(T& a, T& b)
-{
-  T tmp = a;
-  a = b;
-  b = tmp;
-}
-
-void Flip(FeaturePair& fp)
-{
-  Swap(fp.e.inEdge1, fp.e.inEdge2);
-  Swap(fp.e.outEdge1, fp.e.outEdge2);
-}
-
 struct ReferenceEdge
 {
   ReferenceEdge(const Body* poly1, const Body* poly2, int flip);
@@ -112,12 +98,12 @@ static void b2FindIncidentEdge(ClipVertex c[2], ReferenceEdge* edge)
   const int i2 = i1 + 1 < count2 ? i1 + 1 : 0;
 
   c[0].v = poly2->wVerts[i1];
-  c[0].fp.e.inEdge2 = edge->index;
-  c[0].fp.e.outEdge2 = i1;
+  c[0].fp.setInEdge2(edge->index);
+  c[0].fp.setOutEdge2(i1);
 
   c[1].v = poly2->wVerts[i2];
-  c[1].fp.e.inEdge2 = edge->index;
-  c[1].fp.e.outEdge2 = i2;
+  c[1].fp.setInEdge2(edge->index);
+  c[1].fp.setOutEdge2(i2);
 }
 
 int ClipSegmentToLine(ClipVertex vOut[2], ClipVertex vIn[2],
@@ -143,12 +129,12 @@ int ClipSegmentToLine(ClipVertex vOut[2], ClipVertex vIn[2],
     vOut[numOut].v = vIn[0].v + interp * (vIn[1].v - vIn[0].v);
     if (distance0 > 0.0f) {
       vOut[numOut].fp = vIn[0].fp;
-      vOut[numOut].fp.e.inEdge1 = clipEdge;
-      vOut[numOut].fp.e.inEdge2 = 0;
+      vOut[numOut].fp.resetInEdge1(clipEdge);
+      vOut[numOut].fp.resetInEdge2();
     } else {
       vOut[numOut].fp = vIn[1].fp;
-      vOut[numOut].fp.e.outEdge1 = clipEdge;
-      vOut[numOut].fp.e.outEdge2 = 0;
+      vOut[numOut].fp.resetOutEdge1(clipEdge);
+      vOut[numOut].fp.resetOutEdge2();
     }
     ++numOut;
   }
@@ -215,7 +201,7 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
       contacts[numContacts].position = cv[i].v - separation * normal;
       contacts[numContacts].feature = cv[i].fp;
       if (edge->flip) {
-        Flip(contacts[numContacts].feature);
+        contacts[numContacts].feature.swap();
       }
       ++numContacts;
     }

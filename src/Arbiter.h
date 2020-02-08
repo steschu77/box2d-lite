@@ -16,16 +16,32 @@
 
 struct Body;
 
-union FeaturePair
+struct FeaturePair
 {
-	struct Edges
-	{
-		char inEdge1;
-		char outEdge1;
-		char inEdge2;
-		char outEdge2;
-	} e;
-	int value;
+  FeaturePair()
+  : value(0)
+  {
+  }
+
+  void setInEdge1(int val) { value |= val << 0; }
+  void setOutEdge1(int val) { value |= val << 8; }
+  void setInEdge2(int val) { value |= val << 16; }
+  void setOutEdge2(int val) { value |= val << 24; }
+  void resetInEdge1(int val)
+  {
+    value &= ~0xff;
+    value |= val << 0;
+  }
+  void resetOutEdge1(int val)
+  {
+    value &= ~0xff00;
+    value |= val << 8;
+  }
+  void resetInEdge2() { value &= ~0xff0000; }
+  void resetOutEdge2() { value &= ~0xff000000; }
+  void swap() { value = ((value & 0xffff) << 16) | ((value & 0xffff0000) >> 16); }
+
+  int value;
 };
 
 struct Contact
