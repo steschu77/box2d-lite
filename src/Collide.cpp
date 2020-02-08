@@ -121,14 +121,14 @@ static void b2FindIncidentEdge(ClipVertex c[2], ReferenceEdge* edge)
 }
 
 int ClipSegmentToLine(ClipVertex vOut[2], ClipVertex vIn[2],
-  const x3d::vector2& normal, float offset, char clipEdge)
+  const x3d::vector2& normal, const x3d::vector2& vx, char clipEdge)
 {
   // Start with no output points
   int numOut = 0;
 
   // Calculate the distance of end points to the line
-  float distance0 = normal * vIn[0].v - offset;
-  float distance1 = normal * vIn[1].v - offset;
+  float distance0 = normal * (vIn[0].v - vx) - 0.02f;
+  float distance1 = normal * (vIn[1].v - vx) - 0.02f;
 
   // If the points are behind the plane
   if (distance0 <= 0.0f)
@@ -185,20 +185,17 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   const x3d::vector2 v11 = v1s[iv1];
   const x3d::vector2 v12 = v1s[iv2];
 
-	const x3d::vector2 tangent = (v12 - v11).norm();
-  const x3d::vector2 xnormal = tangent.perpendicular();
-  const float frontOffset = xnormal * v11;
-  const float sideOffset1 = -tangent * v11 + 0.02f;
-  const float sideOffset2 = tangent * v12 + 0.02f;
+  const x3d::vector2 normal = edge->poly1->wNorms[iv1];
+  const x3d::vector2 tangent = -normal.perpendicular();
 
 	ClipVertex incedge1[2];
-  int np1 = ClipSegmentToLine(incedge1, incedge, -tangent, sideOffset1, iv1);
+  int np1 = ClipSegmentToLine(incedge1, incedge, -tangent, v11, iv1);
   if (np1 < 2) {
     return 0;
   }
 
 	ClipVertex incedge2[2];
-  int np2 = ClipSegmentToLine(incedge2, incedge1, tangent, sideOffset2, iv2);
+  int np2 = ClipSegmentToLine(incedge2, incedge1, tangent, v12, iv2);
   if (np2 < 2) {
     return 0;
   }
@@ -209,13 +206,13 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
 
   int numContacts = 0;
   for (int i = 0; i < 2; ++i) {
-    float separation = xnormal * cv[i].v - frontOffset;
+    float separation = normal * (cv[i].v - v11);
 
     if (separation <= 0) {
       contacts[numContacts].separation = separation;
-      contacts[numContacts].normal = edge->flip ? -xnormal : xnormal;
+      contacts[numContacts].normal = edge->flip ? -normal : normal;
       // slide contact point onto reference face (easy to cull)
-      contacts[numContacts].position = cv[i].v - separation * xnormal;
+      contacts[numContacts].position = cv[i].v - separation * normal;
       contacts[numContacts].feature = cv[i].fp;
       if (edge->flip) {
         Flip(contacts[numContacts].feature);
