@@ -18,8 +18,11 @@ struct Body
 {
   void Set(const x3d::vector2& pos, float rot, const x3d::vector2& w, float m);
   void SetStatic(const x3d::vector2& pos, float rot, const x3d::vector2& w);
-  void applyImpulse(const x3d::vector2& pt, const x3d::vector2& P);
 
+  void applyImpulse(const x3d::vector2& pt, const x3d::vector2& P);
+  void integrateForces(float dt);
+  void integrateVelocities(float dt);
+  
   x3d::vector2 position;
   float rotation = 0;
 

@@ -79,10 +79,13 @@ void World::Step(float dt)
   // Determine overlapping bodies and update contact points.
   BroadPhase();
 
+  for (auto& b : bodies) {
+    b->force = gravity * b->mass;
+  }
+
   // Integrate forces.
   for (auto& b : bodies) {
-    b->velocity += dt * (gravity + b->invMass * b->force);
-    b->angularVelocity += dt * b->invI * b->torque;
+    b->integrateForces(dt);
   }
 
   // Perform pre-steps.
@@ -107,13 +110,6 @@ void World::Step(float dt)
 
   // Integrate Velocities
   for (auto& b : bodies) {
-    b->position += dt * b->velocity;
-    b->rotation += dt * b->angularVelocity;
-
-    b->force = x3d::vector2(0.0f, 0.0f);
-    b->torque = 0.0f;
-
-    b->p = b->position;
-    b->q = x3d::rotation2(b->rotation);
+    b->integrateVelocities(dt);
   }
 }

@@ -87,3 +87,21 @@ void Body::applyImpulse(const x3d::vector2& pt, const x3d::vector2& P)
   velocity += invMass * P;
   angularVelocity += invI * x3d::cross(r, P);
 }
+
+void Body::integrateForces(float dt)
+{
+  velocity += dt * invMass * force;
+  angularVelocity += dt * invI * torque;
+}
+
+void Body::integrateVelocities(float dt)
+{
+  position += dt * velocity;
+  rotation += dt * angularVelocity;
+
+  force = x3d::vector2(0.0f, 0.0f);
+  torque = 0.0f;
+
+  p = position;
+  q = x3d::rotation2(rotation);
+}
