@@ -30,6 +30,12 @@ struct Body
   float torque = 0;
 
   x3d::vector2 width;
+  x3d::vector2 vertices[4];
+  x3d::vector2 normals[4];
+  const int count = 4;
+
+  x3d::vector2 p;
+  x3d::rot2 q;
 
   float friction = 0.2f;
   float mass = FLT_MAX;

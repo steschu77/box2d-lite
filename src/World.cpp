@@ -112,5 +112,8 @@ void World::Step(float dt)
 
     b->force = x3d::vector2(0.0f, 0.0f);
     b->torque = 0.0f;
+
+    b->p = b->position;
+    b->q = x3d::rotation2(b->rotation);
   }
 }

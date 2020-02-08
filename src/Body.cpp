@@ -22,6 +22,18 @@ void Body::Set(const x3d::vector2& pos, float rot, const x3d::vector2& w, float 
   friction = 0.2f;
 
   width = w;
+
+  x3d::vector2 h = 0.5f * w;
+  vertices[0] = x3d::vector2(-h.u0(), -h.u1());
+  vertices[1] = x3d::vector2(h.u0(), -h.u1());
+  vertices[2] = x3d::vector2(h.u0(), h.u1());
+  vertices[3] = x3d::vector2(-h.u0(), h.u1());
+
+  normals[0] = x3d::vector2(0.0f, -1.0f);
+  normals[1] = x3d::vector2(1.0f, 0.0f);
+  normals[2] = x3d::vector2(0.0f, 1.0f);
+  normals[3] = x3d::vector2(-1.0f, 0.0f);
+
   mass = m;
 
   if (mass < FLT_MAX) {
@@ -33,6 +45,9 @@ void Body::Set(const x3d::vector2& pos, float rot, const x3d::vector2& w, float 
     I = FLT_MAX;
     invI = 0.0f;
   }
+
+  p = position;
+  q = x3d::rotation2(rotation);
 }
 
 void Body::SetStatic(const x3d::vector2& pos, float rot, const x3d::vector2& w)
@@ -46,10 +61,24 @@ void Body::SetStatic(const x3d::vector2& pos, float rot, const x3d::vector2& w)
   friction = 0.2f;
 
   width = w;
+  x3d::vector2 h = 0.5f * w;
+  vertices[0] = x3d::vector2(-h.u0(), -h.u1());
+  vertices[1] = x3d::vector2(h.u0(), -h.u1());
+  vertices[2] = x3d::vector2(h.u0(), h.u1());
+  vertices[3] = x3d::vector2(-h.u0(), h.u1());
+
+  normals[0] = x3d::vector2(0.0f, -1.0f);
+  normals[1] = x3d::vector2(1.0f, 0.0f);
+  normals[2] = x3d::vector2(0.0f, 1.0f);
+  normals[3] = x3d::vector2(-1.0f, 0.0f);
+
   mass = FLT_MAX;
   invMass = 0.0f;
   I = FLT_MAX;
   invI = 0.0f;
+
+  p = position;
+  q = x3d::rotation2(rotation);
 }
 
 void Body::applyImpulse(const x3d::vector2& pt, const x3d::vector2& P)
