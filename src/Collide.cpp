@@ -60,18 +60,15 @@ static void b2FindMaxSeparation(ReferenceEdge* edge)
   const Body* poly2 = edge->poly2;
   const int count1 = poly1->count;
   const int count2 = poly2->count;
-  const x3d::vector2* n1s = poly1->normals;
-  const x3d::vector2* v1s = poly1->vertices;
-  const x3d::vector2* v2s = poly2->vertices;
-
-  const x3d::rot2 q = x3d::mulT(poly2->q, poly1->q);
-  const x3d::vector2 p = x3d::mulT(poly2->q, poly1->p - poly2->p);
+  const x3d::vector2* n1s = poly1->wNorms;
+  const x3d::vector2* v1s = poly1->wVerts;
+  const x3d::vector2* v2s = poly2->wVerts;
 
   for (int i = 0; i < count1; ++i) {
 
     // Get poly1 normal and vertex in poly2 coords.
-    const x3d::vector2 n = x3d::mul(q, n1s[i]);
-    const x3d::vector2 v1 = x3d::mul(q, v1s[i]) + p;
+    const x3d::vector2 n = n1s[i];
+    const x3d::vector2 v1 = v1s[i];
 
     // Find deepest point for normal i.
     float si = FLT_MAX;
@@ -95,12 +92,9 @@ static void b2FindIncidentEdge(ClipVertex c[2], ReferenceEdge* edge)
   const Body* poly2 = edge->poly2;
 
   const int count2 = poly2->count;
-  const x3d::vector2* n2s = poly2->normals;
-  const x3d::vector2* v2s = poly2->vertices;
 
-  // Get the normal of the reference edge in poly2's frame.
-  const x3d::vector2& n = poly1->normals[edge->index];
-  const x3d::vector2 n1 = x3d::mulT(poly2->q, x3d::mul(poly1->q, n));
+  const x3d::vector2& n1 = poly1->wNorms[edge->index];
+  const x3d::vector2* n2s = poly2->wNorms;
 
   // Find the incident edge on poly2.
   int index = 0;
@@ -117,11 +111,11 @@ static void b2FindIncidentEdge(ClipVertex c[2], ReferenceEdge* edge)
   const int i1 = index;
   const int i2 = i1 + 1 < count2 ? i1 + 1 : 0;
 
-  c[0].v = x3d::mul(poly2->q, v2s[i1]) + poly2->p;
+  c[0].v = poly2->wVerts[i1];
   c[0].fp.e.inEdge2 = edge->index;
   c[0].fp.e.outEdge2 = i1;
 
-  c[1].v = x3d::mul(poly2->q, v2s[i2]) + poly2->p;
+  c[1].v = poly2->wVerts[i2];
   c[1].fp.e.inEdge2 = edge->index;
   c[1].fp.e.outEdge2 = i2;
 }
@@ -183,13 +177,13 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   b2FindIncidentEdge(incedge, edge);
 
 	const int count1 = edge->poly1->count;
-  const x3d::vector2* v1s = edge->poly1->vertices;
+  const x3d::vector2* v1s = edge->poly1->wVerts;
 
   const int iv1 = edge->index;
   const int iv2 = iv1 + 1 < count1 ? iv1 + 1 : 0;
 
-  const x3d::vector2 v11 = x3d::mul(edge->poly1->q, v1s[iv1]) + edge->poly1->p;
-  const x3d::vector2 v12 = x3d::mul(edge->poly1->q, v1s[iv2]) + edge->poly1->p;
+  const x3d::vector2 v11 = v1s[iv1];
+  const x3d::vector2 v12 = v1s[iv2];
 
 	const x3d::vector2 tangent = (v12 - v11).norm();
   const x3d::vector2 xnormal = tangent.perpendicular();

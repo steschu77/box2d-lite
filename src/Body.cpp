@@ -46,8 +46,7 @@ void Body::Set(const x3d::vector2& pos, float rot, const x3d::vector2& w, float 
     invI = 0.0f;
   }
 
-  p = position;
-  q = x3d::rotation2(rotation);
+  updateWorld();
 }
 
 void Body::SetStatic(const x3d::vector2& pos, float rot, const x3d::vector2& w)
@@ -77,8 +76,7 @@ void Body::SetStatic(const x3d::vector2& pos, float rot, const x3d::vector2& w)
   I = FLT_MAX;
   invI = 0.0f;
 
-  p = position;
-  q = x3d::rotation2(rotation);
+  updateWorld();
 }
 
 void Body::applyImpulse(const x3d::vector2& pt, const x3d::vector2& P)
@@ -102,6 +100,19 @@ void Body::integrateVelocities(float dt)
   force = x3d::vector2(0.0f, 0.0f);
   torque = 0.0f;
 
+  updateWorld();
+}
+
+void Body::updateWorld()
+{
   p = position;
   q = x3d::rotation2(rotation);
+
+  for (int i = 0; i < count; i++) {
+    wVerts[i] = x3d::mul(q, vertices[i]) + position;
+  }
+
+  for (int i = 0; i < count; i++) {
+    wNorms[i] = x3d::mul(q, normals[i]);
+  }
 }

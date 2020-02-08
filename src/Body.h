@@ -40,6 +40,10 @@ struct Body
   x3d::vector2 p;
   x3d::rot2 q;
 
+  x3d::vector2 wVerts[4];
+  x3d::vector2 wNorms[4];
+  void updateWorld();
+
   float friction = 0.2f;
   float mass = FLT_MAX;
   float invMass = 0;
