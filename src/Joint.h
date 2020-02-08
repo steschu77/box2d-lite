@@ -12,7 +12,7 @@
 #ifndef JOINT_H
 #define JOINT_H
 
-#include "MathUtils.h"
+#include "VecMath.h"
 
 struct Body;
 
@@ -24,16 +24,16 @@ struct Joint
 		biasFactor(0.2f), softness(0.0f)
 		{}
 
-	void Set(Body* body1, Body* body2, const Vec2& anchor);
+	void Set(Body* body1, Body* body2, const x3d::vector2& anchor);
 
 	void PreStep(float inv_dt);
 	void ApplyImpulse();
 
-	Mat22 M;
-	Vec2 localAnchor1, localAnchor2;
-	Vec2 r1, r2;
-	Vec2 bias;
-	Vec2 P;		// accumulated impulse
+	x3d::matrix2x2 M;
+	x3d::vector2 localAnchor1, localAnchor2;
+	x3d::vector2 r1, r2;
+	x3d::vector2 bias;
+	x3d::vector2 P;		// accumulated impulse
 	Body* body1;
 	Body* body2;
 	float biasFactor;

@@ -1,0 +1,29 @@
+# Run manually to reformat a file:
+# clang-format -i --style=file <file>
+Language:      Cpp
+BasedOnStyle:  WebKit
+ColumnLimit: 80
+IndentWidth: 2
+AccessModifierOffset: -2
+AllowShortFunctionsOnASingleLine: InlineOnly
+AlwaysBreakTemplateDeclarations: true
+ConstructorInitializerIndentWidth: 0
+ContinuationIndentWidth: 2
+BreakInheritanceList: BeforeComma
+BreakConstructorInitializers: BeforeComma
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass:      true
+  AfterEnum:       true
+  AfterStruct:     true
+  AfterUnion:      true
+  AfterFunction:   true
+NamespaceIndentation: None
+PenaltyBreakAssignment: 10
+PenaltyBreakBeforeFirstCallParameter: 20
+PenaltyBreakComment: 30
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000
+PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 5
+PenaltyReturnTypeOnItsOwnLine: 200
