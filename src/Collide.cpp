@@ -14,28 +14,27 @@
 
 struct ClipVertex
 {
-  ClipVertex() { fp.value = 0; }
+  ClipVertex() {}
+
+  ContactPointId id;
   x3d::vector2 v;
-  FeaturePair fp;
 };
 
 struct ReferenceEdge
 {
   ReferenceEdge(const Body* poly1, const Body* poly2, int flip);
 
-  const Body* poly1;
-  const Body* poly2;
-  int flip;
-  float separation;
-  int index;
+  const Body* poly1 = nullptr;
+  const Body* poly2 = nullptr;
+  int flip = 0;
+  float separation = -FLT_MAX;
+  int index = 0;
 };
 
 ReferenceEdge::ReferenceEdge(const Body* poly1, const Body* poly2, int flip)
 : poly1(poly1)
 , poly2(poly2)
 , flip(flip)
-, separation(-FLT_MAX)
-, index(0)
 {
 }
 
@@ -98,51 +97,34 @@ static void b2FindIncidentEdge(ClipVertex c[2], ReferenceEdge* edge)
   const int i2 = i1 + 1 < count2 ? i1 + 1 : 0;
 
   c[0].v = poly2->wVerts[i1];
-  c[0].fp.setInEdge2(edge->index);
-  c[0].fp.setOutEdge2(i1);
+  c[0].id.setInEdge2(edge->index);
+  c[0].id.setOutEdge2(i1);
 
   c[1].v = poly2->wVerts[i2];
-  c[1].fp.setInEdge2(edge->index);
-  c[1].fp.setOutEdge2(i2);
+  c[1].id.setInEdge2(edge->index);
+  c[1].id.setOutEdge2(i2);
 }
 
-int ClipSegmentToLine(ClipVertex vOut[2], ClipVertex vIn[2],
-  const x3d::vector2& normal, const x3d::vector2& vx, char clipEdge)
+void ClipSegmentToLine(ClipVertex vOut[2],
+  const x3d::vector2& normal, const x3d::vector2& vx, int clipEdge)
 {
-  // Start with no output points
-  int numOut = 0;
-
   // Calculate the distance of end points to the line
-  float distance0 = normal * (vIn[0].v - vx) - 0.02f;
-  float distance1 = normal * (vIn[1].v - vx) - 0.02f;
+  float distance0 = normal * (vOut[0].v - vx) - 0.02f;
+  float distance1 = normal * (vOut[1].v - vx) - 0.02f;
 
-  // If the points are behind the plane
-  if (distance0 <= 0.0f)
-    vOut[numOut++] = vIn[0];
-  if (distance1 <= 0.0f)
-    vOut[numOut++] = vIn[1];
-
-  // If the points are on different sides of the plane
-  if (distance0 * distance1 < 0.0f) {
-    // Find intersection point of edge and plane
+  if (distance0 > 0.0f) {
     float interp = distance0 / (distance0 - distance1);
-    vOut[numOut].v = vIn[0].v + interp * (vIn[1].v - vIn[0].v);
-    if (distance0 > 0.0f) {
-      vOut[numOut].fp = vIn[0].fp;
-      vOut[numOut].fp.resetInEdge1(clipEdge);
-      vOut[numOut].fp.resetInEdge2();
-    } else {
-      vOut[numOut].fp = vIn[1].fp;
-      vOut[numOut].fp.resetOutEdge1(clipEdge);
-      vOut[numOut].fp.resetOutEdge2();
-    }
-    ++numOut;
+    vOut[0].v = vOut[0].v + interp * (vOut[1].v - vOut[0].v);
+    vOut[0].id.setInEdge1(clipEdge);
+    vOut[0].id.resetInEdge2();
+  } else if (distance1 > 0.0f) {
+    float interp = distance0 / (distance0 - distance1);
+    vOut[1].v = vOut[0].v + interp * (vOut[1].v - vOut[0].v);
+    vOut[1].id.setOutEdge1(clipEdge);
+    vOut[1].id.resetOutEdge2();
   }
-
-  return numOut;
 }
 
-// The normal points from A to B
 int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
 {
   ReferenceEdge edgeA(bodyA, bodyB, 0);
@@ -174,35 +156,21 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   const x3d::vector2 normal = edge->poly1->wNorms[iv1];
   const x3d::vector2 tangent = -normal.perpendicular();
 
-	ClipVertex incedge1[2];
-  int np1 = ClipSegmentToLine(incedge1, incedge, -tangent, v11, iv1);
-  if (np1 < 2) {
-    return 0;
-  }
-
-	ClipVertex incedge2[2];
-  int np2 = ClipSegmentToLine(incedge2, incedge1, tangent, v12, iv2);
-  if (np2 < 2) {
-    return 0;
-  }
+  ClipSegmentToLine(incedge, -tangent, v11, iv1);
+  ClipSegmentToLine(incedge, tangent, v12, iv2);
 
   // Now clipPoints2 contains the clipping points.
   // Due to roundoff, it is possible that clipping removes all points.
-  ClipVertex* cv = incedge2;
-
   int numContacts = 0;
   for (int i = 0; i < 2; ++i) {
-    float separation = normal * (cv[i].v - v11);
+    float separation = normal * (incedge[i].v - v11);
 
     if (separation <= 0) {
       contacts[numContacts].separation = separation;
       contacts[numContacts].normal = edge->flip ? -normal : normal;
+      contacts[numContacts].id = edge->flip ? -incedge[i].id : incedge[i].id;
       // slide contact point onto reference face (easy to cull)
-      contacts[numContacts].position = cv[i].v - separation * normal;
-      contacts[numContacts].feature = cv[i].fp;
-      if (edge->flip) {
-        contacts[numContacts].feature.swap();
-      }
+      contacts[numContacts].position = incedge[i].v - separation * normal;
       ++numContacts;
     }
   }

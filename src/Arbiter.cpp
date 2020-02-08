@@ -43,7 +43,7 @@ void Arbiter::updateContacts(Contact* newContacts, int numNewContacts)
   // Store accumulated impulses
   for (int i = 0; i < numNewContacts; ++i) {
     for (int j = 0; j < numContacts; ++j) {
-      if (newContacts[i].feature.value == contacts[j].feature.value) {
+      if (newContacts[i].id.value == contacts[j].id.value) {
         newContacts[i].Pn = contacts[j].Pn;
         newContacts[i].Pt = contacts[j].Pt;
         newContacts[i].Pnb = contacts[j].Pnb;
