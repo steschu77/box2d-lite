@@ -141,7 +141,7 @@ float x3d::vector2::length() const
 }
 
 // ----------------------------------------------------------------------------
-x3d::vector2 x3d::vector2::norm()
+x3d::vector2 x3d::vector2::norm() const
 {
   float l = 1.0f / length();
   if (l < epsilon) {
@@ -153,13 +153,13 @@ x3d::vector2 x3d::vector2::norm()
 
 // ----------------------------------------------------------------------------
 // Get the skew vector such that dot(perpendicular, other) == cross(vec, other)
-x3d::vector2 x3d::vector2::perpendicular()
+x3d::vector2 x3d::vector2::perpendicular() const
 {
-  return x3d::vector2(-m[1], m[0]);
+  return x3d::vector2(m[1], -m[0]);
 }
 
 // ----------------------------------------------------------------------------
-x3d::vector2 x3d::vector2::abs()
+x3d::vector2 x3d::vector2::abs() const
 {
   return x3d::vector2(fabsf(m[0]), fabsf(m[1]));
 }

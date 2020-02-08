@@ -40,10 +40,10 @@ struct vector2
   float length2() const;
   float length() const;
 
-  vector2 norm();
-  vector2 perpendicular();
+  vector2 norm() const;
+  vector2 perpendicular() const;
 
-  vector2 abs();
+  vector2 abs() const;
 
   float m[2];
 };
@@ -160,23 +160,20 @@ x3d::vector3 intersect(const vector3& v0, const vector3& v1);
 float gap(const vector3& line, const vector3& pt);
 
 // ----------------------------------------------------------------------------
-struct rotation2
+struct rot2
 {
-  rotation2();
-
-  explicit rotation2(float Angle);
-
-  void putAngle(float Angle);
-  void putIdentity();
-
-  float getAngle() const;
-  vector2 getXAxis() const;
-  vector2 getYAxis() const;
+  rot2();
+  rot2(float s, float c);
 
   /// Sine and cosine
-  float radians;
-  float sin;
-  float cos;
+  float s;
+  float c;
 };
+
+rot2 rotation2(float Angle);
+rot2 mul(const rot2& q, const rot2& r);
+rot2 mulT(const rot2& q, const rot2& r);
+vector2 mul(const rot2& q, const vector2& v);
+vector2 mulT(const rot2& q, const vector2& v);
 
 } // namespace x3d
