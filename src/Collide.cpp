@@ -39,7 +39,7 @@ ReferenceEdge::ReferenceEdge(const Body* poly1, const Body* poly2, int flip)
 }
 
 // Find the max separation between poly1 and poly2 using edge normals from poly1.
-static void b2FindMaxSeparation(ReferenceEdge* edge)
+static void findMaxSeparation(ReferenceEdge* edge)
 {
   const Body* poly1 = edge->poly1;
   const Body* poly2 = edge->poly2;
@@ -71,7 +71,7 @@ static void b2FindMaxSeparation(ReferenceEdge* edge)
   }
 }
 
-static void b2FindIncidentEdge(ClipVertex c[2], ReferenceEdge* edge)
+static void findIncidentEdge(ClipVertex c[2], const ReferenceEdge* edge)
 {
   const Body* poly1 = edge->poly1;
   const Body* poly2 = edge->poly2;
@@ -105,12 +105,12 @@ static void b2FindIncidentEdge(ClipVertex c[2], ReferenceEdge* edge)
   c[1].id.setOutEdge2(i2);
 }
 
-void ClipSegmentToLine(ClipVertex vOut[2],
+void clipSegmentToLine(ClipVertex vOut[2],
   const x3d::vector2& normal, const x3d::vector2& vx, int clipEdge)
 {
   // Calculate the distance of end points to the line
-  float distance0 = normal * (vOut[0].v - vx) - 0.02f;
-  float distance1 = normal * (vOut[1].v - vx) - 0.02f;
+  const float distance0 = normal * (vOut[0].v - vx) - 0.02f;
+  const float distance1 = normal * (vOut[1].v - vx) - 0.02f;
 
   if (distance0 > 0.0f) {
     float interp = distance0 / (distance0 - distance1);
@@ -128,21 +128,21 @@ void ClipSegmentToLine(ClipVertex vOut[2],
 int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
 {
   ReferenceEdge edgeA(bodyA, bodyB, 0);
-  b2FindMaxSeparation(&edgeA);
+  findMaxSeparation(&edgeA);
   if (edgeA.separation > 0.0f) {
     return 0;
   }
 
   ReferenceEdge edgeB(bodyB, bodyA, 1);
-  b2FindMaxSeparation(&edgeB);
+  findMaxSeparation(&edgeB);
   if (edgeB.separation > 0.0f) {
     return 0;
   }
 
-  ReferenceEdge* edge = edgeB.separation > edgeA.separation ? &edgeB : &edgeA;
+  const ReferenceEdge* edge = edgeB.separation > edgeA.separation ? &edgeB : &edgeA;
 
-  ClipVertex incedge[2];
-  b2FindIncidentEdge(incedge, edge);
+  ClipVertex incidentEdge[2];
+  findIncidentEdge(incidentEdge, edge);
 
 	const int count1 = edge->poly1->count;
   const x3d::vector2* v1s = edge->poly1->wVerts;
@@ -156,21 +156,21 @@ int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
   const x3d::vector2 normal = edge->poly1->wNorms[iv1];
   const x3d::vector2 tangent = -normal.perpendicular();
 
-  ClipSegmentToLine(incedge, -tangent, v11, iv1);
-  ClipSegmentToLine(incedge, tangent, v12, iv2);
+  clipSegmentToLine(incidentEdge, -tangent, v11, iv1);
+  clipSegmentToLine(incidentEdge, tangent, v12, iv2);
 
-  // Now clipPoints2 contains the clipping points.
+  // Now incidentEdge contains the clipping points.
   // Due to roundoff, it is possible that clipping removes all points.
   int numContacts = 0;
   for (int i = 0; i < 2; ++i) {
-    float separation = normal * (incedge[i].v - v11);
+    float separation = normal * (incidentEdge[i].v - v11);
 
     if (separation <= 0) {
       contacts[numContacts].separation = separation;
       contacts[numContacts].normal = edge->flip ? -normal : normal;
-      contacts[numContacts].id = edge->flip ? -incedge[i].id : incedge[i].id;
+      contacts[numContacts].id = edge->flip ? -incidentEdge[i].id : incidentEdge[i].id;
       // slide contact point onto reference face (easy to cull)
-      contacts[numContacts].position = incedge[i].v - separation * normal;
+      contacts[numContacts].position = incidentEdge[i].v - separation * normal;
       ++numContacts;
     }
   }
