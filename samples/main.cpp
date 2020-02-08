@@ -161,6 +161,14 @@ static void AddDynamic(
   ++numBodies;
 }
 
+// Collision
+static void Demo0(Body* b, Joint* j)
+{
+  AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
+  AddDynamic(
+    &b[1], x3d::vector2(0.0f, 0.49f), 0.0f, x3d::vector2(1.0f, 1.0f), 200.0f);
+}
+
 // Single box
 static void Demo1(Body* b, Joint* j)
 {
@@ -372,7 +380,7 @@ static void Demo9(Body* b, Joint* j)
     x3d::vector2 x(0.5f + i, y);
     AddDynamic(&b[1 + i], x, 0.0f, x3d::vector2(0.75f, 0.25f), mass);
 
-    j->Set(&b[i], &b[1 + i], x3d::vector2(i, y));
+    j->Set(&b[i], &b[1 + i], x3d::vector2(1.0f * i, y));
     j->softness = softness;
     j->biasFactor = biasFactor;
     world.Add(j);
@@ -383,8 +391,8 @@ static void Demo9(Body* b, Joint* j)
 }
 
 void (*demos[])(Body* b, Joint* j)
-  = { Demo1, Demo2, Demo3, Demo4, Demo5, Demo6, Demo7, Demo8, Demo9 };
-const char* demoStrings[] = { "Demo 1: A Single Box", "Demo 2: Simple Pendulum",
+  = { Demo0, Demo1, Demo2, Demo3, Demo4, Demo5, Demo6, Demo7, Demo8, Demo9 };
+const char* demoStrings[] = { "Demo 0: Collision", "Demo 1: A Single Box", "Demo 2: Simple Pendulum",
   "Demo 3: Varying Friction Coefficients", "Demo 4: Randomized Stacking",
   "Demo 5: Pyramid Stacking", "Demo 6: A Teeter", "Demo 7: A Suspension Bridge",
   "Demo 8: Dominos", "Demo 9: Multi-pendulum" };
