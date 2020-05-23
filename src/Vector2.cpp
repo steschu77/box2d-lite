@@ -159,6 +159,17 @@ x3d::vector2 x3d::vector2::perpendicular() const
 }
 
 // ----------------------------------------------------------------------------
+x3d::vector2 x3d::vector2::rotate(float rad) const
+{
+  const float q_s = sinf(rad);
+  const float q_c = cosf(rad);
+
+  float v_u0 = q_c * m[0] - q_s * m[1];
+  float v_u1 = q_s * m[0] + q_c * m[1];
+  return x3d::vector2(v_u0, v_u1);
+}
+
+// ----------------------------------------------------------------------------
 x3d::vector2 x3d::vector2::abs() const
 {
   return x3d::vector2(fabsf(m[0]), fabsf(m[1]));

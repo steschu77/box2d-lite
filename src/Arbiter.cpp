@@ -10,7 +10,7 @@
  */
 
 #include "Arbiter.h"
-#include "Body.h"
+#include "RigidBody.h"
 #include "World.h"
 
 #include <algorithm>
@@ -20,7 +20,7 @@ inline float clamp(float a, float low, float high)
   return std::max(low, std::min(a, high));
 }
 
-ArbiterKey::ArbiterKey(Body* b1, Body* b2)
+ArbiterKey::ArbiterKey(RigidBody* b1, RigidBody* b2)
 {
   if (b1 < b2) {
     body1 = b1;
@@ -34,7 +34,7 @@ ArbiterKey::ArbiterKey(Body* b1, Body* b2)
 Arbiter::Arbiter(ArbiterKey& key)
 : key(key)
 {
-  friction = sqrtf(key.body1->friction * key.body2->friction);
+  friction = sqrtf(key.body1->getFriction() * key.body2->getFriction());
 }
 
 // ----------------------------------------------------------------------------
@@ -61,8 +61,8 @@ void Arbiter::updateContacts(Contact* newContacts, int numNewContacts)
 
 void Arbiter::PreStep(float inv_dt)
 {
-  Body* b1 = key.body1;
-  Body* b2 = key.body2;
+  RigidBody* b1 = key.body1;
+  RigidBody* b2 = key.body2;
 
   const float k_allowedPenetration = 0.01f;
   const float k_biasFactor = 0.2f;
@@ -70,21 +70,22 @@ void Arbiter::PreStep(float inv_dt)
   for (int i = 0; i < numContacts; ++i) {
     Contact* c = contacts + i;
 
-    x3d::vector2 r1 = c->position - b1->position;
-    x3d::vector2 r2 = c->position - b2->position;
+    x3d::vector2 r1 = c->position - b1->getPosition();
+    x3d::vector2 r2 = c->position - b2->getPosition();
 
     // Precompute normal mass, tangent mass, and bias.
     float rn1 = r1 * c->normal;
     float rn2 = r2 * c->normal;
-    float kNormal = b1->invMass + b2->invMass;
-    kNormal += b1->invI * (r1 * r1 - rn1 * rn1) + b2->invI * (r2 * r2 - rn2 * rn2);
+    float kNormal = b1->getInvMass() + b2->getInvMass();
+    float kTangent = kNormal;
+    kNormal += b1->getInvI() * (r1 * r1 - rn1 * rn1)
+      + b2->getInvI() * (r2 * r2 - rn2 * rn2);
     c->massNormal = 1.0f / kNormal;
 
     x3d::vector2 tangent = -c->normal.perpendicular();
     float rt1 = r1 * tangent;
     float rt2 = r2 * tangent;
-    float kTangent = b1->invMass + b2->invMass;
-    kTangent += b1->invI * (r1 * r1 - rt1 * rt1) + b2->invI * (r2 * r2 - rt2 * rt2);
+    kTangent += b1->getInvI() * (r1 * r1 - rt1 * rt1) + b2->getInvI() * (r2 * r2 - rt2 * rt2);
     c->massTangent = 1.0f / kTangent;
 
     c->bias = -k_biasFactor * inv_dt
@@ -100,15 +101,15 @@ void Arbiter::PreStep(float inv_dt)
 
 void Arbiter::ApplyImpulse()
 {
-  Body* b1 = key.body1;
-  Body* b2 = key.body2;
+  RigidBody* b1 = key.body1;
+  RigidBody* b2 = key.body2;
 
   for (int i = 0; i < numContacts; ++i) {
     Contact* c = contacts + i;
 
     // Relative velocity at contact
-    x3d::vector2 dv = b2->getRelativeVelocity(c->position)
-      - b1->getRelativeVelocity(c->position);
+    x3d::vector2 dv = b2->relativeVelocity(c->position)
+      - b1->relativeVelocity(c->position);
 
     // Compute normal impulse
     float vn = dv * c->normal;
@@ -121,8 +122,8 @@ void Arbiter::ApplyImpulse()
     dPn = c->Pn - Pn0;
 
     // Relative velocity at contact
-    dv = b2->getRelativeVelocity(c->position)
-      - b1->getRelativeVelocity(c->position);
+    dv = b2->relativeVelocity(c->position)
+      - b1->relativeVelocity(c->position);
 
     x3d::vector2 tangent = -c->normal.perpendicular();
     float vt = dv * tangent;

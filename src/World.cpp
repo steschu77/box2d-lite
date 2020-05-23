@@ -10,18 +10,18 @@
  */
 
 #include "World.h"
-#include "Body.h"
+#include "RigidBody.h"
 #include "Joint.h"
 
 typedef std::map<ArbiterKey, Arbiter>::iterator ArbIter;
 typedef std::pair<ArbiterKey, Arbiter> ArbPair;
 
-void World::Add(Body* body)
+void World::Add(RigidBody* body)
 {
   bodies.push_back(body);
 }
 
-void World::AddStatic(Body* body)
+void World::AddStatic(RigidBody* body)
 {
   statics.push_back(body);
 }
@@ -39,7 +39,7 @@ void World::Clear()
   arbiters.clear();
 }
 
-void World::_collide(Body* bi, Body* bj)
+void World::_collide(RigidBody* bi, RigidBody* bj)
 {
   ArbiterKey key(bi, bj);
 
@@ -58,15 +58,15 @@ void World::BroadPhase()
 {
   // O(n^2) broad-phase
   for (size_t i = 0; i < bodies.size(); ++i) {
-    Body* bi = bodies[i];
+    RigidBody* bi = bodies[i];
 
     for (size_t j = i + 1; j < bodies.size(); ++j) {
-      Body* bj = bodies[j];
+      RigidBody* bj = bodies[j];
       _collide(bi, bj);
     }
 
     for (size_t j = 0; j < statics.size(); ++j) {
-      Body* bj = statics[j];
+      RigidBody* bj = statics[j];
       _collide(bi, bj);
     }
   }
@@ -80,7 +80,7 @@ void World::Step(float dt)
   BroadPhase();
 
   for (auto& b : bodies) {
-    b->force = gravity * b->mass;
+    b->applyForce(gravity * b->getMass());
   }
 
   // Integrate forces.

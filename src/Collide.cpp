@@ -10,7 +10,7 @@
  */
 
 #include "Arbiter.h"
-#include "Body.h"
+#include "RigidBody.h"
 
 struct ClipVertex
 {
@@ -22,16 +22,16 @@ struct ClipVertex
 
 struct ReferenceEdge
 {
-  ReferenceEdge(const Body* poly1, const Body* poly2, int flip);
+  ReferenceEdge(const RigidBody* poly1, const RigidBody* poly2, int flip);
 
-  const Body* poly1 = nullptr;
-  const Body* poly2 = nullptr;
+  const RigidBody* poly1 = nullptr;
+  const RigidBody* poly2 = nullptr;
   int flip = 0;
   float separation = -FLT_MAX;
   int index = 0;
 };
 
-ReferenceEdge::ReferenceEdge(const Body* poly1, const Body* poly2, int flip)
+ReferenceEdge::ReferenceEdge(const RigidBody* poly1, const RigidBody* poly2, int flip)
 : poly1(poly1)
 , poly2(poly2)
 , flip(flip)
@@ -41,8 +41,8 @@ ReferenceEdge::ReferenceEdge(const Body* poly1, const Body* poly2, int flip)
 // Find the max separation between poly1 and poly2 using edge normals from poly1.
 static void findMaxSeparation(ReferenceEdge* edge)
 {
-  const Body* poly1 = edge->poly1;
-  const Body* poly2 = edge->poly2;
+  const RigidBody* poly1 = edge->poly1;
+  const RigidBody* poly2 = edge->poly2;
   const int count1 = poly1->count;
   const int count2 = poly2->count;
   const x3d::vector2* n1s = poly1->wNorms;
@@ -73,8 +73,8 @@ static void findMaxSeparation(ReferenceEdge* edge)
 
 static void findIncidentEdge(ClipVertex c[2], const ReferenceEdge* edge)
 {
-  const Body* poly1 = edge->poly1;
-  const Body* poly2 = edge->poly2;
+  const RigidBody* poly1 = edge->poly1;
+  const RigidBody* poly2 = edge->poly2;
 
   const int count2 = poly2->count;
 
@@ -125,7 +125,7 @@ void clipSegmentToLine(ClipVertex vOut[2],
   }
 }
 
-int Collide(Contact* contacts, Body* bodyA, Body* bodyB)
+int Collide(Contact* contacts, RigidBody* bodyA, RigidBody* bodyB)
 {
   ReferenceEdge edgeA(bodyA, bodyB, 0);
   findMaxSeparation(&edgeA);

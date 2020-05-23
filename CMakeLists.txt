@@ -5,8 +5,8 @@ project(box2d-lite LANGUAGES CXX)
 set(BOX2D_SOURCE_FILES
 	src/Arbiter.cpp
     src/Arbiter.h
-	src/Body.cpp
-    src/Body.h
+	src/RigidBody.cpp
+    src/RigidBody.h
 	src/Collide.cpp
 	src/Joint.cpp
     src/Joint.h

@@ -14,7 +14,7 @@
 
 #include "VecMath.h"
 
-struct Body;
+struct RigidBody;
 
 struct ContactPointId
 {
@@ -70,10 +70,10 @@ struct ContactPoints
 
 struct ArbiterKey
 {
-  ArbiterKey(Body* b1, Body* b2);
+  ArbiterKey(RigidBody* b1, RigidBody* b2);
 
-  Body* body1;
-  Body* body2;
+  RigidBody* body1;
+  RigidBody* body2;
 };
 
 struct Arbiter
@@ -110,6 +110,6 @@ inline bool operator<(const ArbiterKey& x0, const ArbiterKey& x1)
   return false;
 }
 
-int Collide(Contact* contacts, Body* body1, Body* body2);
+int Collide(Contact* contacts, RigidBody* body1, RigidBody* body2);
 
 #endif

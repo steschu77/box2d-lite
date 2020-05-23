@@ -42,6 +42,7 @@ struct vector2
 
   vector2 norm() const;
   vector2 perpendicular() const;
+  vector2 rotate(float rad) const;
 
   vector2 abs() const;
 

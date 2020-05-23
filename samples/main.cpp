@@ -20,17 +20,17 @@
 #include "GLFW/glfw3.h"
 #include "glad/glad.h"
 
-#include "Body.h"
+#include "RigidBody.h"
 #include "Joint.h"
 #include "World.h"
 
 namespace {
 GLFWwindow* mainWindow = NULL;
 
-Body bodies[200];
+RigidBody bodies[200];
 Joint joints[100];
 
-Body* bomb = NULL;
+RigidBody* bomb = NULL;
 
 float timeStep = 1.0f / 60.0f;
 int iterations = 10;
@@ -67,11 +67,11 @@ static void DrawText(int x, int y, const char* string)
   ImGui::End();
 }
 
-static void DrawBody(Body* body)
+static void DrawBody(RigidBody* body)
 {
-  x3d::matrix2x2 R(body->rotation);
-  x3d::vector2 x = body->position;
-  x3d::vector2 h = 0.5f * body->width;
+  x3d::matrix2x2 R(body->getRotation());
+  x3d::vector2 x = body->getPosition();
+  x3d::vector2 h = 0.5f * body->getSize();
 
   x3d::vector2 v1 = x + R * x3d::vector2(-h.u0(), -h.u1());
   x3d::vector2 v2 = x + R * x3d::vector2(h.u0(), -h.u1());
@@ -93,16 +93,16 @@ static void DrawBody(Body* body)
 
 static void DrawJoint(Joint* joint)
 {
-  Body* b1 = joint->body1;
-  Body* b2 = joint->body2;
+  RigidBody* b1 = joint->body1;
+  RigidBody* b2 = joint->body2;
 
-  x3d::matrix2x2 R1(b1->rotation);
-  x3d::matrix2x2 R2(b2->rotation);
+  x3d::matrix2x2 R1(b1->getRotation());
+  x3d::matrix2x2 R2(b2->getRotation());
 
-  x3d::vector2 x1 = b1->position;
+  x3d::vector2 x1 = b1->getPosition();
   x3d::vector2 p1 = x1 + R1 * joint->localAnchor1;
 
-  x3d::vector2 x2 = b2->position;
+  x3d::vector2 x2 = b2->getPosition();
   x3d::vector2 p2 = x2 + R2 * joint->localAnchor2;
 
   glColor3f(0.5f, 0.5f, 0.8f);
@@ -139,30 +139,34 @@ static void LaunchBomb()
     ++numBodies;
   }
 
-  bomb->Set(x3d::vector2(Random(-15.0f, 15.0f), 15.0f), Random(-1.5f, 1.5f),
-    x3d::vector2(1.0f, 1.0f), 50.0f);
-  bomb->velocity = -1.5f * bomb->position;
-  bomb->angularVelocity = Random(-20.0f, 20.0f);
+  bomb->Set(numBodies,
+    x3d::vector2(Random(-15.0f, 15.0f), 15.0f),
+    Random(-1.5f, 1.5f),
+    x3d::vector2(1.0f, 1.0f),
+    50.0f);
+
+//  bomb->velocity = -1.5f * bomb->getPosition();
+//  bomb->angularVelocity = Random(-20.0f, 20.0f);
 }
 
 static void AddStatic(
-  Body* b, const x3d::vector2& pos, float rot, const x3d::vector2& w)
+  RigidBody* b, const x3d::vector2& pos, float rot, const x3d::vector2& w)
 {
-  b->SetStatic(pos, rot, w);
+  b->Set(numBodies, pos, rot, w, 0);
   world.AddStatic(b);
   ++numBodies;
 }
 
 static void AddDynamic(
-  Body* b, const x3d::vector2& pos, float rot, const x3d::vector2& w, float m)
+  RigidBody* b, const x3d::vector2& pos, float rot, const x3d::vector2& w, float m)
 {
-  b->Set(pos, rot, w, m);
+  b->Set(numBodies, pos, rot, w, m);
   world.Add(b);
   ++numBodies;
 }
 
 // Collision
-static void Demo0(Body* b, Joint* j)
+static void Demo0(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
   AddDynamic(
@@ -170,7 +174,7 @@ static void Demo0(Body* b, Joint* j)
 }
 
 // Single box
-static void Demo1(Body* b, Joint* j)
+static void Demo1(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
   AddDynamic(
@@ -178,7 +182,7 @@ static void Demo1(Body* b, Joint* j)
 }
 
 // A simple pendulum
-static void Demo2(Body* b, Joint* j)
+static void Demo2(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
   AddDynamic(
@@ -190,7 +194,7 @@ static void Demo2(Body* b, Joint* j)
 }
 
 // Varying friction coefficients
-static void Demo3(Body* b, Joint* j)
+static void Demo3(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
   AddStatic(&b[1], x3d::vector2(-2.0f, 11.0f), -0.25f, x3d::vector2(13.0f, 0.25f));
@@ -203,12 +207,12 @@ static void Demo3(Body* b, Joint* j)
   for (int i = 0; i < 5; ++i) {
     AddDynamic(&b[6 + i], x3d::vector2(-7.5f + 2.0f * i, 14.0f), 0.0f,
       x3d::vector2(0.5f, 0.5f), 25.0f);
-    b[6 + i].friction = friction[i];
+    b[6 + i].setFriction(friction[i]);
   }
 }
 
 // A vertical stack
-static void Demo4(Body* b, Joint* j)
+static void Demo4(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
 
@@ -220,7 +224,7 @@ static void Demo4(Body* b, Joint* j)
 }
 
 // A pyramid
-static void Demo5(Body* b, Joint* j)
+static void Demo5(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
 
@@ -239,7 +243,7 @@ static void Demo5(Body* b, Joint* j)
 }
 
 // A teeter
-static void Demo6(Body* b, Joint* j)
+static void Demo6(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
   AddDynamic(
@@ -257,7 +261,7 @@ static void Demo6(Body* b, Joint* j)
 }
 
 // A suspension bridge
-static void Demo7(Body* b, Joint* j)
+static void Demo7(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
 
@@ -306,7 +310,7 @@ static void Demo7(Body* b, Joint* j)
 }
 
 // Dominos
-static void Demo8(Body* b, Joint* j)
+static void Demo8(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
   AddStatic(&b[1], x3d::vector2(-1.5f, 10.0f), 0.0f, x3d::vector2(12.0f, 0.5f));
@@ -321,12 +325,12 @@ static void Demo8(Body* b, Joint* j)
   AddDynamic(
     &b[7], x3d::vector2(6.0f, 3.6f), 0.0f, x3d::vector2(2.0f, 0.2f), 10.0f);
 
-  b[6].friction = 0.1f;
+  b[6].setFriction(0.1f);
 
   for (int i = 0; i < 10; ++i) {
     x3d::vector2 x = x3d::vector2(-6.0f + 1.0f * i, 11.125f);
     AddDynamic(&b[8 + i], x, 0.0f, x3d::vector2(0.2f, 2.0f), 10.0f);
-    b[8 + i].friction = 0.1f;
+    b[8 + i].setFriction(0.1f);
   }
 
   j->Set(&b[0], &b[4], x3d::vector2(-2.0f, 1.0f));
@@ -351,7 +355,7 @@ static void Demo8(Body* b, Joint* j)
 }
 
 // A multi-pendulum
-static void Demo9(Body* b, Joint* j)
+static void Demo9(RigidBody* b, Joint* j)
 {
   AddStatic(&b[0], x3d::vector2(0.0f, -10.0f), 0.0f, x3d::vector2(100.0f, 20.0f));
 
@@ -390,7 +394,7 @@ static void Demo9(Body* b, Joint* j)
   }
 }
 
-void (*demos[])(Body* b, Joint* j)
+void (*demos[])(RigidBody* b, Joint* j)
   = { Demo0, Demo1, Demo2, Demo3, Demo4, Demo5, Demo6, Demo7, Demo8, Demo9 };
 const char* demoStrings[] = { "Demo 0: Collision", "Demo 1: A Single Box", "Demo 2: Simple Pendulum",
   "Demo 3: Varying Friction Coefficients", "Demo 4: Randomized Stacking",

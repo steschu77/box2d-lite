@@ -14,7 +14,7 @@
 
 #include "VecMath.h"
 
-struct Body;
+struct RigidBody;
 
 struct Joint
 {
@@ -24,7 +24,7 @@ struct Joint
 		biasFactor(0.2f), softness(0.0f)
 		{}
 
-	void Set(Body* body1, Body* body2, const x3d::vector2& anchor);
+	void Set(RigidBody* body1, RigidBody* body2, const x3d::vector2& anchor);
 
 	void PreStep(float inv_dt);
 	void ApplyImpulse();
@@ -34,8 +34,8 @@ struct Joint
 	x3d::vector2 r1, r2;
 	x3d::vector2 bias;
 	x3d::vector2 P;		// accumulated impulse
-	Body* body1;
-	Body* body2;
+	RigidBody* body1;
+	RigidBody* body2;
 	float biasFactor;
 	float softness;
 };

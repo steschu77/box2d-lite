@@ -18,7 +18,7 @@
 #include <set>
 #include <vector>
 
-struct Body;
+struct RigidBody;
 struct Joint;
 
 struct World
@@ -29,15 +29,15 @@ struct World
   {
   }
 
-  void Add(Body* body);
-  void AddStatic(Body* body);
+  void Add(RigidBody* body);
+  void AddStatic(RigidBody* body);
   void Add(Joint* joint);
   void Clear();
 
   void Step(float dt);
 
-  std::vector<Body*> bodies;
-  std::vector<Body*> statics;
+  std::vector<RigidBody*> bodies;
+  std::vector<RigidBody*> statics;
   std::vector<Joint*> joints;
   std::map<ArbiterKey, Arbiter> arbiters;
   x3d::vector2 gravity;
@@ -45,7 +45,7 @@ struct World
 
 private:
   void BroadPhase();
-  void _collide(Body* bi, Body* bj);
+  void _collide(RigidBody* bi, RigidBody* bj);
 };
 
 #endif
