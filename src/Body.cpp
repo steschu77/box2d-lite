@@ -49,6 +49,12 @@ void Body::Set(const x3d::vector2& pos, float rot, const x3d::vector2& w, float 
   updateWorld();
 }
 
+// ----------------------------------------------------------------------------
+x3d::vector2 Body::getRelativeVelocity(const x3d::vector2& pt) const
+{
+  return velocity + x3d::cross(angularVelocity, pt - position);
+}
+
 void Body::SetStatic(const x3d::vector2& pos, float rot, const x3d::vector2& w)
 {
   position = pos;

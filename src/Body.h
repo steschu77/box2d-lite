@@ -22,6 +22,7 @@ struct Body
   void applyImpulse(const x3d::vector2& pt, const x3d::vector2& P);
   void integrateForces(float dt);
   void integrateVelocities(float dt);
+  x3d::vector2 getRelativeVelocity(const x3d::vector2& pt) const;
   
   x3d::vector2 position;
   float rotation = 0;

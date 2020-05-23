@@ -105,12 +105,10 @@ void Arbiter::ApplyImpulse()
 
   for (int i = 0; i < numContacts; ++i) {
     Contact* c = contacts + i;
-    x3d::vector2 r1 = c->position - b1->position;
-    x3d::vector2 r2 = c->position - b2->position;
 
     // Relative velocity at contact
-    x3d::vector2 dv = b2->velocity + x3d::cross(b2->angularVelocity, r2)
-      - b1->velocity - x3d::cross(b1->angularVelocity, r1);
+    x3d::vector2 dv = b2->getRelativeVelocity(c->position)
+      - b1->getRelativeVelocity(c->position);
 
     // Compute normal impulse
     float vn = dv * c->normal;
@@ -123,8 +121,8 @@ void Arbiter::ApplyImpulse()
     dPn = c->Pn - Pn0;
 
     // Relative velocity at contact
-    dv = b2->velocity + x3d::cross(b2->angularVelocity, r2) - b1->velocity
-      - x3d::cross(b1->angularVelocity, r1);
+    dv = b2->getRelativeVelocity(c->position)
+      - b1->getRelativeVelocity(c->position);
 
     x3d::vector2 tangent = -c->normal.perpendicular();
     float vt = dv * tangent;
