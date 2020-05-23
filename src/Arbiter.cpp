@@ -122,12 +122,6 @@ void Arbiter::ApplyImpulse()
     c->Pn = std::max(Pn0 + dPn, 0.0f);
     dPn = c->Pn - Pn0;
 
-    // Apply contact impulse
-    x3d::vector2 Pn = dPn * c->normal;
-
-    b1->applyImpulse(c->position, -Pn);
-    b2->applyImpulse(c->position, Pn);
-
     // Relative velocity at contact
     dv = b2->velocity + x3d::cross(b2->angularVelocity, r2) - b1->velocity
       - x3d::cross(b1->angularVelocity, r1);
@@ -145,9 +139,11 @@ void Arbiter::ApplyImpulse()
     dPt = c->Pt - oldTangentImpulse;
 
     // Apply contact impulse
+    x3d::vector2 Pn = dPn * c->normal;
     x3d::vector2 Pt = dPt * tangent;
+    x3d::vector2 P = Pt + Pn;
 
-    b1->applyImpulse(c->position, -Pt);
-    b2->applyImpulse(c->position, Pt);
+    b1->applyImpulse(c->position, -P);
+    b2->applyImpulse(c->position, P);
   }
 }
